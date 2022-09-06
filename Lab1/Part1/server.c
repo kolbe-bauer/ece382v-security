@@ -11,7 +11,7 @@ int main(int argc, char const* argv[])
 	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 	// define server address
-	struct sockaddr_in servAddr, clinAdder;
+	struct sockaddr_in servAddr;
 
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_port = htons(12000);
@@ -26,9 +26,10 @@ int main(int argc, char const* argv[])
         listen(serverSocket, 5);
 
         // integer to hold client socket.
-        int len = sizeof(clinAdder);
-        int connectionSocket = accept(serverSocket, (struct sockaddr*)&clinAdder, &len);
-        // printf("New socket connection %d\n",connectionSocket);
+        struct sockaddr_in addr;
+        int len = sizeof(addr);
+        int connectionSocket = accept(serverSocket, (struct sockaddr*)&addr, &len);
+        printf("New socket connection: %d\tat addr: %d\n",connectionSocket,addr.sin_addr.s_addr);
 
         // get string from client
 		char sentence[1024];
