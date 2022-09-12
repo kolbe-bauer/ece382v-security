@@ -1,0 +1,5 @@
+sudo tcpdump -i any -w 1.pcap
+
+x-www-browser https://some-url.org
+
+torify x-www-browser https://some-url.org 2>/dev/null
