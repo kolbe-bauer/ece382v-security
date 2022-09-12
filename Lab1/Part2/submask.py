@@ -4,7 +4,9 @@ def main():
     with open("Port80Results.csv") as f:
         [target_ips.append(line.strip()) for line in f.readlines()]
     subnets = {}
-    for i in range(len(target_ips)):
+    for i in range(37620):
+        if (i % 3700 == 0):
+            print(f"Currently on line number: '{i}'\n")
         ip = target_ips[i]
         try:
             obj = IPWhois(ip)
@@ -35,5 +37,6 @@ if __name__ == "__main__":
     main()
 
 # sudo zmap -p 80 -b blacklist.txt -o Port80Results -t 7200
+# sudo zmap -p 80 -w whitelist.txt -o Port82Results -t 600
 # sudo zmap -p 22 -w whitelist.txt -o Port22Results -t 600
 # sudo zmap -p 433 -w whitelist.txt -o Port433Results -t 600

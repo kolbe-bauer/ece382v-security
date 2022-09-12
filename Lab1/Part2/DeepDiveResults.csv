@@ -1,0 +1,8 @@
+Number of IPs with Port 80,'21670'
+Number of IPs with Port 22,'23878'
+Number of IPs with Port 433,'33'
+
+Number of Devices with Ports 80 and 22 open,'1939'
+Number of Devices with Ports 80 and 433 open,'7'
+Number of Devices with Ports 22 and 433 open,'14'
+Number of Devices with Ports 80, 22, and 433 open,'3'
