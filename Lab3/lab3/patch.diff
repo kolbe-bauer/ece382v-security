@@ -1,0 +1,290 @@
+diff --git a/Dockerfile.db b/Dockerfile.db
+new file mode 100644
+index 0000000..205fc13
+--- /dev/null
++++ b/Dockerfile.db
+@@ -0,0 +1,26 @@
++FROM debian:9.2
++
++LABEL maintainer "opsxcq@strm.sh"
++
++RUN apt-get update && \
++    apt-get upgrade -y && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    debconf-utils && \
++    echo mariadb-server mysql-server/root_password password vulnerables | debconf-set-selections && \
++    echo mariadb-server mysql-server/root_password_again password vulnerables | debconf-set-selections && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    apache2 \
++    mariadb-server \
++    php \
++    php-mysql \
++    php-pgsql \
++    php-pear \
++    php-gd \
++    && \
++    apt-get clean && \
++    rm -rf /var/lib/apt/lists/*
++
++RUN service mysql start && \
++    sleep 3 && \
++    mysql -uroot -pvulnerables -e "CREATE USER app@localhost IDENTIFIED BY 'vulnerables';CREATE DATABASE dvwa;GRANT ALL privileges ON dvwa.* TO 'app'@localhost;"
++
+diff --git a/Dockerfile.web b/Dockerfile.web
+new file mode 100644
+index 0000000..fee245a
+--- /dev/null
++++ b/Dockerfile.web
+@@ -0,0 +1,34 @@
++FROM debian:9.2
++
++LABEL maintainer "opsxcq@strm.sh"
++
++RUN apt-get update && \
++    apt-get upgrade -y && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    debconf-utils && \
++    echo mariadb-server mysql-server/root_password password vulnerables | debconf-set-selections && \
++    echo mariadb-server mysql-server/root_password_again password vulnerables | debconf-set-selections && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    apache2 \
++    mariadb-server \
++    php \
++    php-mysql \
++    php-pgsql \
++    php-pear \
++    php-gd \
++    && \
++    apt-get clean && \
++    rm -rf /var/lib/apt/lists/*
++
++COPY php.ini /etc/php5/apache2/php.ini
++COPY dvwa /var/www/html
++
++COPY config.inc.php /var/www/html/config/
++
++RUN chown www-data:www-data -R /var/www/html && \
++    rm /var/www/html/index.html
++
++EXPOSE 80
++
++COPY main.sh /
++ENTRYPOINT ["/main.sh"]
+diff --git a/docker-compose.yml b/docker-compose.yml
+new file mode 100644
+index 0000000..b00fcaf
+--- /dev/null
++++ b/docker-compose.yml
+@@ -0,0 +1,21 @@
++version: '2'
++services:
++        website:
++                build: ./Dockerfile.web
++                container_name: dvwa-website
++                ports:
++                        - 8001:81
++        mysql:
++                build: ./Dockerfile.db
++                container_name: dvwa-database
++#               command: --default-authentication-plugin=mysql_native_password
++#               volumes:
++#                       - .:/application
++#               restart: always
++#               environment: 
++#                        - MYSQL_ROOT_PASSWORD=.sweetpwd.
++#                        - MYSQL_DATABASE=my_db
++#                        - MYSQL_USER=db_user
++#                        - MYSQL_PASSWORD=.mypwd
++                ports:
++                        - "8002:82"
+diff --git a/docker/database/Dockerfile b/docker/database/Dockerfile
+new file mode 100644
+index 0000000..205fc13
+--- /dev/null
++++ b/docker/database/Dockerfile
+@@ -0,0 +1,26 @@
++FROM debian:9.2
++
++LABEL maintainer "opsxcq@strm.sh"
++
++RUN apt-get update && \
++    apt-get upgrade -y && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    debconf-utils && \
++    echo mariadb-server mysql-server/root_password password vulnerables | debconf-set-selections && \
++    echo mariadb-server mysql-server/root_password_again password vulnerables | debconf-set-selections && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    apache2 \
++    mariadb-server \
++    php \
++    php-mysql \
++    php-pgsql \
++    php-pear \
++    php-gd \
++    && \
++    apt-get clean && \
++    rm -rf /var/lib/apt/lists/*
++
++RUN service mysql start && \
++    sleep 3 && \
++    mysql -uroot -pvulnerables -e "CREATE USER app@localhost IDENTIFIED BY 'vulnerables';CREATE DATABASE dvwa;GRANT ALL privileges ON dvwa.* TO 'app'@localhost;"
++
+diff --git a/docker/web-app/Dockerfile b/docker/web-app/Dockerfile
+new file mode 100644
+index 0000000..fee245a
+--- /dev/null
++++ b/docker/web-app/Dockerfile
+@@ -0,0 +1,34 @@
++FROM debian:9.2
++
++LABEL maintainer "opsxcq@strm.sh"
++
++RUN apt-get update && \
++    apt-get upgrade -y && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    debconf-utils && \
++    echo mariadb-server mysql-server/root_password password vulnerables | debconf-set-selections && \
++    echo mariadb-server mysql-server/root_password_again password vulnerables | debconf-set-selections && \
++    DEBIAN_FRONTEND=noninteractive apt-get install -y \
++    apache2 \
++    mariadb-server \
++    php \
++    php-mysql \
++    php-pgsql \
++    php-pear \
++    php-gd \
++    && \
++    apt-get clean && \
++    rm -rf /var/lib/apt/lists/*
++
++COPY php.ini /etc/php5/apache2/php.ini
++COPY dvwa /var/www/html
++
++COPY config.inc.php /var/www/html/config/
++
++RUN chown www-data:www-data -R /var/www/html && \
++    rm /var/www/html/index.html
++
++EXPOSE 80
++
++COPY main.sh /
++ENTRYPOINT ["/main.sh"]
+diff --git a/mydb-svc.yaml b/mydb-svc.yaml
+new file mode 100644
+index 0000000..6c57ba4
+--- /dev/null
++++ b/mydb-svc.yaml
+@@ -0,0 +1,14 @@
++apiVersion: v1
++kind: Service
++metadata:
++  name: mydb-service
++  labels:
++    app: mysql8
++spec:
++  type: NodePort
++  ports:
++  - port: 3306
++    protocol: TCP
++  selector:
++    app: mysql8
++
+diff --git a/mydb.yaml b/mydb.yaml
+new file mode 100644
+index 0000000..2cfa824
+--- /dev/null
++++ b/mydb.yaml
+@@ -0,0 +1,39 @@
++apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
++kind: Deployment
++metadata:
++  name: mydb
++spec:
++  selector:
++    matchLabels:
++      app: mysql8
++  strategy:
++    type: Recreate
++  template:
++    metadata:
++      labels:
++        app: mysql8
++    spec:
++      containers:
++      - image: mydb:8.0
++        name: mydb
++        imagePullPolicy: IfNotPresent
++        env:
++        - name: MYSQL_ROOT_PASSWORD
++          value: .sweetpwd.
++        - name: MYSQL_DATABASE
++          value: my_db
++        - name: MYSQL_USER
++          value: db_user
++        - name: MYSQL_PASSWORD
++          value: .mypwd
++        args: ["--default-authentication-plugin=mysql_native_password"]
++        ports:
++        - containerPort: 3306
++          name: mydb
++        resources:
++                requests:
++                        memory: "32Mi"
++                        cpu: "50m"
++                limits:
++                        memory: "64Mi"
++                        cpu: "100m"
+diff --git a/webserver-svc.yaml b/webserver-svc.yaml
+new file mode 100644
+index 0000000..301ae6e
+--- /dev/null
++++ b/webserver-svc.yaml
+@@ -0,0 +1,13 @@
++apiVersion: v1
++kind: Service
++metadata:
++  name: webserver
++  labels:
++    run: webserver
++spec:
++  type: LoadBalancer
++  ports:
++  - port: 80
++    protocol: TCP
++  selector:
++    app: apache
+diff --git a/webserver.yaml b/webserver.yaml
+new file mode 100644
+index 0000000..d41c076
+--- /dev/null
++++ b/webserver.yaml
+@@ -0,0 +1,29 @@
++apiVersion: apps/v1
++kind: Deployment
++metadata: 
++        name: webserver
++        labels: 
++                app: apache
++spec:
++        replicas: 1
++        selector:
++                matchLabels:
++                        app: apache
++        template:
++                metadata:
++                        labels:
++                                app: apache
++                spec:
++                        containers:
++                                - name: php-apache
++                                  image: localhost:32000/mydb:k8s
++                                  imagePullPolicy: Always
++                                  ports:
++                                          - containerPort: 80
++                                  resources:
++                                          requests:
++                                                  memory: "32Mi"
++                                                  cpu: "50m"
++                                          limits:
++                                                  memory: "64Mi"
++                                                  cpu: "100m"
